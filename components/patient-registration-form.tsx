@@ -52,6 +52,7 @@ export function PatientRegistrationForm() {
     setIsSubmitting(true)
 
     try {
+      console.log("[v0] Attempting to create patient...")
       const patient = await createPatient({
         name: formData.name,
         gender: formData.gender,
@@ -62,10 +63,20 @@ export function PatientRegistrationForm() {
         reference: formData.reference,
         mobile: formData.mobile,
       })
+      console.log("[v0] Patient created successfully:", patient)
       setRegisteredPatient(patient)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("[v0] Error creating patient:", err)
-      setError("Failed to register patient. Please check your Firebase configuration.")
+      const errorMessage = err instanceof Error ? err.message : "Unknown error"
+      if (errorMessage.includes("Missing or insufficient permissions")) {
+        setError("Firebase permissions error. Please ensure Firestore rules allow read/write access.")
+      } else if (errorMessage.includes("PERMISSION_DENIED") || errorMessage.includes("permission-denied")) {
+        setError("Firebase permissions denied. Please check your Firestore security rules.")
+      } else if (errorMessage.includes("not-found") || errorMessage.includes("NOT_FOUND")) {
+        setError("Firebase project not found. Please verify your project ID.")
+      } else {
+        setError(`Failed to register patient: ${errorMessage}`)
+      }
     } finally {
       setIsSubmitting(false)
     }
