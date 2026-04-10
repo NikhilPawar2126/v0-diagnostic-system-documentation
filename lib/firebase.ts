@@ -44,17 +44,24 @@ export interface Scan {
 // Generate next patient UID
 export async function generatePatientUID(): Promise<string> {
   const patientsRef = collection(db, 'patients')
-  const q = query(patientsRef, orderBy('createdAt', 'desc'))
-  const snapshot = await getDocs(q)
+  // Get all patients without orderBy to avoid index requirement
+  const snapshot = await getDocs(patientsRef)
   
   if (snapshot.empty) {
     return 'P001'
   }
   
+  // Find the highest UID number
   const patients = snapshot.docs.map(doc => doc.data() as Patient)
-  const lastUID = patients[0]?.uid || 'P000'
-  const lastNumber = parseInt(lastUID.replace('P', ''), 10)
-  const nextNumber = lastNumber + 1
+  let maxNumber = 0
+  patients.forEach(patient => {
+    const num = parseInt(patient.uid.replace('P', ''), 10)
+    if (num > maxNumber) {
+      maxNumber = num
+    }
+  })
+  
+  const nextNumber = maxNumber + 1
   return `P${nextNumber.toString().padStart(3, '0')}`
 }
 
@@ -77,13 +84,20 @@ export async function createPatient(patientData: Omit<Patient, 'id' | 'uid' | 'c
 
 export async function getPatients(): Promise<Patient[]> {
   const patientsRef = collection(db, 'patients')
-  const q = query(patientsRef, orderBy('createdAt', 'desc'))
-  const snapshot = await getDocs(q)
+  // Get all patients without orderBy to avoid index requirement
+  const snapshot = await getDocs(patientsRef)
   
-  return snapshot.docs.map(doc => ({
+  const patients = snapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data()
   } as Patient))
+  
+  // Sort in memory by createdAt descending (newest first)
+  return patients.sort((a, b) => {
+    const timeA = a.createdAt instanceof Timestamp ? a.createdAt.toMillis() : new Date(a.createdAt).getTime()
+    const timeB = b.createdAt instanceof Timestamp ? b.createdAt.toMillis() : new Date(b.createdAt).getTime()
+    return timeB - timeA
+  })
 }
 
 export async function updatePatientStatus(patientId: string, status: 'Active' | 'Inactive'): Promise<void> {
@@ -96,14 +110,12 @@ export async function updatePatientStatus(patientId: string, status: 'Active' | 
 
 // Scan operations
 export async function saveScan(scanData: Omit<Scan, 'id' | 'timestamp'>): Promise<Scan> {
-  console.log("[v0] Saving scan for patient:", scanData.uid)
   const scan: Omit<Scan, 'id'> = {
     ...scanData,
     timestamp: Timestamp.now(),
   }
   
   const docRef = await addDoc(collection(db, 'scans'), scan)
-  console.log("[v0] Scan saved successfully with ID:", docRef.id)
   return { ...scan, id: docRef.id }
 }
 
