@@ -53,19 +53,16 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
   const openMenu = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     if (!menuButtonRef.current) return
-
     const rect = menuButtonRef.current.getBoundingClientRect()
+    // Use fixed positioning — top = button bottom, right-align to button
     const menuWidth = 200
-
     let left = rect.right - menuWidth
     if (left < 8) left = 8
-
     setMenuPos({
       top: rect.bottom + 8,
       left,
     })
-
-    setShowMenu(true) // 🔥 FIXED
+    setShowMenu(prev => !prev)
   }, [])
 
   const closeMenu = useCallback(() => setShowMenu(false), [])
@@ -162,10 +159,7 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
           >
             <button
               ref={menuButtonRef}
-              onMouseDown={(e) => {
-                e.stopPropagation()
-                openMenu(e)
-              }}
+              onClick={openMenu}
               className="neu-btn p-2 rounded-lg"
               aria-label="Open patient menu"
             >
