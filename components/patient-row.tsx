@@ -53,16 +53,19 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
   const openMenu = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     if (!menuButtonRef.current) return
+
     const rect = menuButtonRef.current.getBoundingClientRect()
-    // Use fixed positioning — top = button bottom, right-align to button
     const menuWidth = 200
+
     let left = rect.right - menuWidth
     if (left < 8) left = 8
+
     setMenuPos({
       top: rect.bottom + 8,
       left,
     })
-    setShowMenu(true)
+
+    setShowMenu(true) // 🔥 FIXED
   }, [])
 
   const closeMenu = useCallback(() => setShowMenu(false), [])
