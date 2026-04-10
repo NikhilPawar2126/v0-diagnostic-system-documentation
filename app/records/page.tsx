@@ -19,9 +19,7 @@ export default function RecordsPage() {
 
   const fetchPatients = useCallback(async () => {
     try {
-      console.log("[v0] Fetching patients from Firebase...")
       const fetchedPatients = await getPatients()
-      console.log("[v0] Fetched patients:", fetchedPatients.length, fetchedPatients)
       
       // Check if each patient has been tested
       const patientsWithStatus = await Promise.all(

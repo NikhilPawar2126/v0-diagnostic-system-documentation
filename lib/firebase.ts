@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app'
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, Timestamp } from 'firebase/firestore'
+import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, Timestamp } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -121,15 +121,16 @@ export async function saveScan(scanData: Omit<Scan, 'id' | 'timestamp'>): Promis
 
 export async function getScansForPatient(uid: string): Promise<Scan[]> {
   const scansRef = collection(db, 'scans')
-  // Use only where clause to avoid composite index requirement
-  const q = query(scansRef, where('uid', '==', uid))
-  const snapshot = await getDocs(q)
+  // Fetch all scans and filter in memory to avoid any index requirement
+  const snapshot = await getDocs(scansRef)
   
-  // Sort in memory instead of Firestore to avoid index requirement
-  const scans = snapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data()
-  } as Scan))
+  // Filter and sort in memory
+  const scans = snapshot.docs
+    .map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    } as Scan))
+    .filter(scan => scan.uid === uid)
   
   // Sort by timestamp descending (newest first)
   return scans.sort((a, b) => {
