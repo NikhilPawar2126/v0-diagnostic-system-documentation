@@ -13,6 +13,7 @@ import {
   ToggleRight,
   Loader2,
   Calendar,
+  Clock,
   Ruler,
   Waves
 } from "lucide-react"
@@ -118,11 +119,18 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
     setShowPrintReport(true)
   }
 
-  const formatTimestamp = (timestamp: Timestamp | Date) => {
+  const formatTimestamp = (timestamp: Timestamp | Date | string | null | undefined): string => {
+    if (!timestamp) return "—"
     if (timestamp instanceof Timestamp) {
-      return timestamp.toDate().toLocaleString()
+      return timestamp.toDate().toLocaleString("en-IN", {
+        day: "2-digit", month: "short", year: "numeric",
+        hour: "2-digit", minute: "2-digit", hour12: true,
+      })
     }
-    return new Date(timestamp).toLocaleString()
+    return new Date(timestamp as string | Date).toLocaleString("en-IN", {
+      day: "2-digit", month: "short", year: "numeric",
+      hour: "2-digit", minute: "2-digit", hour12: true,
+    })
   }
 
   return (
@@ -151,6 +159,24 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
           <span className="text-muted-foreground text-sm hidden md:block flex-1 truncate max-w-[180px]">
             {patient.diagnosis || "No diagnosis"}
           </span>
+
+          {/* Registration Date & Time */}
+          {patient.createdAt && (
+            <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Calendar className="w-3 h-3" />
+                <span>
+                  {formatTimestamp(patient.createdAt).split(",")[0]}
+                </span>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="w-3 h-3" />
+                <span>
+                  {formatTimestamp(patient.createdAt).split(",")[1]?.trim() || ""}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Buttons — stop row click propagation */}
           <div
