@@ -22,11 +22,10 @@ import { Timestamp } from "firebase/firestore"
 
 interface PatientRowProps {
   patient: Patient
-  isTested: boolean
   onStatusChange: () => void
 }
 
-export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProps) {
+export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
   const router = useRouter()
   const [isExpanded, setIsExpanded] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
@@ -126,15 +125,6 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
         <span className="text-muted-foreground hidden md:block flex-1 truncate max-w-[200px]">
           {patient.diagnosis || "No diagnosis"}
         </span>
-        
-        {/* Test Badge */}
-        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-          isTested 
-            ? "bg-accent/20 text-accent" 
-            : "bg-muted text-muted-foreground"
-        }`}>
-          {isTested ? "Tested" : "Not Tested"}
-        </div>
         
         {/* Actions */}
         <div className="flex items-center gap-2">

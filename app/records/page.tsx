@@ -2,38 +2,21 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { Search, Filter, Loader2, FileText, Users } from "lucide-react"
-import { getPatients, getScansForPatient, type Patient } from "@/lib/firebase"
+import { getPatients, type Patient } from "@/lib/firebase"
 import { PatientRow } from "@/components/patient-row"
 
-interface PatientWithTestStatus extends Patient {
-  isTested: boolean
-}
-
 export default function RecordsPage() {
-  const [patients, setPatients] = useState<PatientWithTestStatus[]>([])
-  const [filteredPatients, setFilteredPatients] = useState<PatientWithTestStatus[]>([])
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [filteredPatients, setFilteredPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "Inactive">("all")
-  const [testFilter, setTestFilter] = useState<"all" | "tested" | "not-tested">("all")
 
   const fetchPatients = useCallback(async () => {
     try {
       const fetchedPatients = await getPatients()
-      
-      // Check if each patient has been tested
-      const patientsWithStatus = await Promise.all(
-        fetchedPatients.map(async (patient) => {
-          const scans = await getScansForPatient(patient.uid)
-          return {
-            ...patient,
-            isTested: scans.length > 0,
-          }
-        })
-      )
-      
-      setPatients(patientsWithStatus)
-      setFilteredPatients(patientsWithStatus)
+      setPatients(fetchedPatients)
+      setFilteredPatients(fetchedPatients)
     } catch (error) {
       console.error("[v0] Error fetching patients:", error)
     } finally {
@@ -64,15 +47,8 @@ export default function RecordsPage() {
       result = result.filter((p) => p.status === statusFilter)
     }
 
-    // Test filter
-    if (testFilter === "tested") {
-      result = result.filter((p) => p.isTested)
-    } else if (testFilter === "not-tested") {
-      result = result.filter((p) => !p.isTested)
-    }
-
     setFilteredPatients(result)
-  }, [patients, searchQuery, statusFilter, testFilter])
+  }, [patients, searchQuery, statusFilter])
 
   const handleStatusChange = () => {
     fetchPatients()
@@ -122,16 +98,7 @@ export default function RecordsPage() {
             </select>
           </div>
 
-          {/* Test Filter */}
-          <select
-            value={testFilter}
-            onChange={(e) => setTestFilter(e.target.value as typeof testFilter)}
-            className="neu-input px-4 py-3 w-full sm:w-[150px] text-sm appearance-none cursor-pointer"
-          >
-            <option value="all">All Tests</option>
-            <option value="tested">Tested</option>
-            <option value="not-tested">Not Tested</option>
-          </select>
+          
         </div>
       </div>
 
@@ -163,7 +130,6 @@ export default function RecordsPage() {
             <PatientRow
               key={patient.id}
               patient={patient}
-              isTested={patient.isTested}
               onStatusChange={handleStatusChange}
             />
           ))}
