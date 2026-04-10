@@ -62,7 +62,7 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
       top: rect.bottom + 8,
       left,
     })
-    setShowMenu(prev => !prev)
+    setShowMenu(true)
   }, [])
 
   const closeMenu = useCallback(() => setShowMenu(false), [])
@@ -159,7 +159,7 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
           >
             <button
               ref={menuButtonRef}
-              onClick={openMenu}
+              onMouseDown={openMenu}
               className="neu-btn p-2 rounded-lg"
               aria-label="Open patient menu"
             >
@@ -214,7 +214,7 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
                       </span>
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Calendar className="w-3 h-3" />
-                        {formatTimestamp(scan.timestamp).split(",")[0]}
+                        {formatTimestamp(scan.timestamp)}
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm">
