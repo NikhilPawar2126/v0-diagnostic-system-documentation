@@ -62,7 +62,7 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
       top: rect.bottom + 8,
       left,
     })
-    setShowMenu(prev => !prev)
+    setShowMenu(true)
   }, [])
 
   const closeMenu = useCallback(() => setShowMenu(false), [])
