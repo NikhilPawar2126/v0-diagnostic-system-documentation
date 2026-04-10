@@ -221,14 +221,14 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
       {showMenu && (
         <>
           <div
-            className="fixed inset-0 z-[9998]"
+            className="neu-dropdown-overlay"
             onClick={(e) => {
               e.stopPropagation()
               setShowMenu(false)
             }}
           />
           <div 
-            className="fixed z-[9999] neu-card p-2 min-w-[180px] shadow-lg"
+            className="neu-dropdown-menu p-2 min-w-[180px]"
             style={{ top: menuPosition.top, left: menuPosition.left }}
           >
             <button

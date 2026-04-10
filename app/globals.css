@@ -220,6 +220,24 @@
   animation: float 3s ease-in-out infinite;
 }
 
+/* Dropdown menu - ensure highest z-index */
+.neu-dropdown-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+}
+
+.neu-dropdown-menu {
+  position: fixed;
+  z-index: 9999;
+  background: var(--background);
+  border-radius: var(--radius);
+  box-shadow: 
+    8px 8px 20px var(--neu-shadow-dark),
+    -8px -8px 20px var(--neu-shadow-light),
+    0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;
