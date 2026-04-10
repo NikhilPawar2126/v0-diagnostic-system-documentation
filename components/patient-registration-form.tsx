@@ -52,7 +52,6 @@ export function PatientRegistrationForm() {
     setIsSubmitting(true)
 
     try {
-      console.log("[v0] Attempting to create patient...")
       const patient = await createPatient({
         name: formData.name,
         gender: formData.gender,
@@ -63,7 +62,6 @@ export function PatientRegistrationForm() {
         reference: formData.reference,
         mobile: formData.mobile,
       })
-      console.log("[v0] Patient created successfully:", patient)
       setRegisteredPatient(patient)
     } catch (err: unknown) {
       console.error("[v0] Error creating patient:", err)

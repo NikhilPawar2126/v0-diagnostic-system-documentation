@@ -10,13 +10,6 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
-// Check if Firebase config is properly set
-const isConfigValid = firebaseConfig.apiKey && firebaseConfig.projectId
-
-if (!isConfigValid && typeof window !== 'undefined') {
-  console.error("[v0] Firebase configuration is missing. Please add your Firebase environment variables.")
-}
-
 // Initialize Firebase only if it hasn't been initialized
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
 const db = getFirestore(app)
