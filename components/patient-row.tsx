@@ -134,44 +134,42 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
   }
 
   return (
-    <>
-      {/* Card */}
-      <div className="neu-card" style={{ overflow: "visible" }}>
+    <div className={`card overflow-visible ${showMenu ? "relative z-50" : ""}`}>
         {/* Main Row */}
         <div
-          className="flex items-center gap-3 p-4 cursor-pointer select-none"
+          className="flex items-center gap-3 sm:gap-4 p-4 sm:p-5 cursor-pointer select-none hover:bg-secondary/30 transition-colors"
           onClick={handleExpand}
         >
           <StatusIndicator status={patient.status === "Active" ? "active" : "inactive"} size="sm" />
 
-          <span className="text-primary font-mono font-bold text-sm min-w-[56px]">
+          <span className="text-primary font-mono font-bold text-xs sm:text-sm min-w-[50px] flex-shrink-0">
             {patient.uid}
           </span>
 
-          <span className="font-semibold text-foreground flex-1 truncate">
+          <span className="font-semibold text-foreground flex-1 truncate min-w-0">
             {patient.name}
           </span>
 
-          <span className="text-muted-foreground text-sm hidden sm:block w-16">
+          <span className="text-muted-foreground text-xs sm:text-sm hidden sm:block w-12 flex-shrink-0">
             {patient.gender}
           </span>
 
-          <span className="text-muted-foreground text-sm hidden md:block flex-1 truncate max-w-[180px]">
-            {patient.diagnosis || "No diagnosis"}
+          <span className="text-muted-foreground text-xs sm:text-sm hidden md:block flex-1 truncate max-w-[150px] lg:max-w-[180px] flex-shrink-0">
+            {patient.diagnosis || "—"}
           </span>
 
           {/* Registration Date & Time */}
           {patient.createdAt && (
             <div className="hidden lg:flex flex-col items-end gap-0.5 flex-shrink-0">
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Calendar className="w-3 h-3" />
-                <span>
+                <Calendar className="w-3 h-3 flex-shrink-0" />
+                <span className="whitespace-nowrap">
                   {formatTimestamp(patient.createdAt).split(",")[0]}
                 </span>
               </div>
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="w-3 h-3" />
-                <span>
+                <Clock className="w-3 h-3 flex-shrink-0" />
+                <span className="whitespace-nowrap">
                   {formatTimestamp(patient.createdAt).split(",")[1]?.trim() || ""}
                 </span>
               </div>
@@ -180,13 +178,13 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
 
           {/* Buttons — stop row click propagation */}
           <div
-            className="flex items-center gap-2 flex-shrink-0"
+            className="flex items-center gap-1 sm:gap-2 flex-shrink-0"
             onClick={e => e.stopPropagation()}
           >
             <button
               ref={menuButtonRef}
               onMouseDown={openMenu}
-              className="neu-btn p-2 rounded-lg"
+              className="btn btn-ghost p-2 rounded-md hover:bg-secondary"
               aria-label="Open patient menu"
             >
               {updatingStatus ? (
@@ -198,7 +196,7 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
 
             <button
               onClick={handleExpand}
-              className="neu-btn p-2 rounded-lg"
+              className="btn btn-ghost p-2 rounded-md hover:bg-secondary"
               aria-label={isExpanded ? "Collapse" : "Expand"}
             >
               {isExpanded
@@ -211,8 +209,8 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
 
         {/* Expanded scan history */}
         {isExpanded && (
-          <div className="border-t border-border bg-secondary/20 p-4">
-            <h4 className="text-sm font-semibold text-muted-foreground mb-3">
+          <div className="border-t border-border bg-secondary/20 p-4 sm:p-5">
+            <h4 className="text-sm font-semibold text-muted-foreground mb-4">
               Examination History
             </h4>
 
@@ -282,48 +280,26 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
               top: menuPos.top,
               left: menuPos.left,
               zIndex: 9999,
-              minWidth: "200px",
+              minWidth: "180px",
               background: "var(--background)",
-              borderRadius: "12px",
-              padding: "6px",
-              boxShadow:
-                "10px 10px 24px var(--neu-shadow-dark), -10px -10px 24px var(--neu-shadow-light), 0 4px 24px rgba(0,0,0,0.12)",
+              borderRadius: "0.5rem",
+              padding: "4px",
+              border: "1px solid var(--border)",
+              boxShadow: "var(--shadow-lg)",
             }}
           >
             <button
               onMouseDown={e => { e.stopPropagation(); handleNewExamination() }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "8px",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "14px",
-                color: "var(--foreground)",
-                textAlign: "left",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = "var(--secondary)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-foreground rounded hover:bg-secondary transition-colors text-left"
             >
-              <Stethoscope style={{ width: 16, height: 16, color: "var(--primary)", flexShrink: 0 }} />
-              New Examination
+              <Stethoscope className="w-4 h-4 text-primary flex-shrink-0" />
+              New Exam
             </button>
 
             <button
               onMouseDown={e => { e.stopPropagation(); handleDownloadPDF() }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "8px",
-                background: "transparent",
-                border: "none",
+              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-foreground rounded hover:bg-secondary transition-colors text-left"
+            >
                 cursor: "pointer",
                 fontSize: "14px",
                 color: "var(--foreground)",
@@ -332,37 +308,24 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
               onMouseEnter={e => (e.currentTarget.style.background = "var(--secondary)")}
               onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
             >
-              <Download style={{ width: 16, height: 16, color: "var(--accent)", flexShrink: 0 }} />
-              Save Data (PDF)
+              <Download className="w-4 h-4 text-accent flex-shrink-0" />
+              Report (PDF)
             </button>
+
+            <div className="h-px bg-border my-1" />
 
             <button
               onMouseDown={e => { e.stopPropagation(); handleToggleStatus() }}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "8px",
-                background: "transparent",
-                border: "none",
-                cursor: "pointer",
-                fontSize: "14px",
-                color: "var(--foreground)",
-                textAlign: "left",
-              }}
-              onMouseEnter={e => (e.currentTarget.style.background = "var(--secondary)")}
-              onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+              className="w-full px-3 py-2 flex items-center gap-2 text-sm text-foreground rounded hover:bg-secondary transition-colors text-left"
             >
               {patient.status === "Active" ? (
                 <>
-                  <ToggleLeft style={{ width: 16, height: 16, color: "var(--destructive)", flexShrink: 0 }} />
+                  <ToggleLeft className="w-4 h-4 text-destructive flex-shrink-0" />
                   Mark Inactive
                 </>
               ) : (
                 <>
-                  <ToggleRight style={{ width: 16, height: 16, color: "var(--accent)", flexShrink: 0 }} />
+                  <ToggleRight className="w-4 h-4 text-success flex-shrink-0" />
                   Mark Active
                 </>
               )}
@@ -370,7 +333,7 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
           </div>
         </>,
         document.body
-      )}
+      )}}
 
       {showPrintReport && (
         <PrintReport

@@ -25,15 +25,15 @@ export function StatusIndicator({ status, label, size = "md" }: StatusIndicatorP
     standby: {
       color: "bg-muted-foreground",
       pulse: false,
-      defaultLabel: "STANDBY",
+      defaultLabel: "Standby",
     },
     live: {
-      color: "bg-accent",
+      color: "bg-success",
       pulse: true,
-      defaultLabel: "LIVE EXAMINATION",
+      defaultLabel: "Live",
     },
     active: {
-      color: "bg-accent",
+      color: "bg-success",
       pulse: false,
       defaultLabel: "Active",
     },
@@ -65,10 +65,9 @@ export function StatusIndicator({ status, label, size = "md" }: StatusIndicatorP
         )}
       </div>
       <span className={cn(
-        "font-medium",
-        labelSizes[size],
-        status === "live" ? "text-accent" : 
-        status === "active" ? "text-accent" :
+        "font-semibold text-xs",
+        status === "live" ? "text-success" : 
+        status === "active" ? "text-success" :
         status === "inactive" ? "text-destructive" :
         "text-muted-foreground"
       )}>

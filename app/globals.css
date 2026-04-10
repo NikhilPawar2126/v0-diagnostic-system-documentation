@@ -4,66 +4,78 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Neumorphic color palette */
-  --background: #e0e5ec;
-  --foreground: #2d3436;
-  --card: #e0e5ec;
-  --card-foreground: #2d3436;
-  --popover: #e0e5ec;
-  --popover-foreground: #2d3436;
-  --primary: #3b5998;
+  /* Modern Professional Color Palette */
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --card: #f8fafc;
+  --card-foreground: #0f172a;
+  --popover: #ffffff;
+  --popover-foreground: #0f172a;
+  --primary: #2563eb; /* Deep Blue */
   --primary-foreground: #ffffff;
-  --secondary: #d1d9e6;
-  --secondary-foreground: #2d3436;
-  --muted: #d1d9e6;
-  --muted-foreground: #636e72;
-  --accent: #00b894;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #475569;
+  --muted: #e2e8f0;
+  --muted-foreground: #64748b;
+  --accent: #06b6d4; /* Cyan */
   --accent-foreground: #ffffff;
-  --destructive: #d63031;
+  --success: #22c55e; /* Green */
+  --success-foreground: #ffffff;
+  --warning: #eab308; /* Yellow */
+  --warning-foreground: #000000;
+  --destructive: #ef4444; /* Red */
   --destructive-foreground: #ffffff;
-  --border: #c8d0e7;
-  --input: #e0e5ec;
-  --ring: #3b5998;
-  --chart-1: #3b5998;
-  --chart-2: #d63031;
-  --chart-3: #00b894;
-  --chart-4: #fdcb6e;
-  --chart-5: #6c5ce7;
-  --radius: 1rem;
+  --border: #e2e8f0;
+  --input: #f8fafc;
+  --ring: #2563eb;
+  --chart-1: #2563eb;
+  --chart-2: #ef4444;
+  --chart-3: #22c55e;
+  --chart-4: #eab308;
+  --chart-5: #8b5cf6;
+  --radius: 0.5rem;
   
-  /* Neumorphic shadows */
-  --neu-shadow-light: #ffffff;
-  --neu-shadow-dark: #a3b1c6;
+  /* Modern Soft Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
 .dark {
-  --background: #1a1a2e;
-  --foreground: #eaeaea;
-  --card: #1a1a2e;
-  --card-foreground: #eaeaea;
-  --popover: #1a1a2e;
-  --popover-foreground: #eaeaea;
-  --primary: #4a6fa5;
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --card: #1e293b;
+  --card-foreground: #f1f5f9;
+  --popover: #0f172a;
+  --popover-foreground: #f1f5f9;
+  --primary: #3b82f6;
   --primary-foreground: #ffffff;
-  --secondary: #16213e;
-  --secondary-foreground: #eaeaea;
-  --muted: #16213e;
-  --muted-foreground: #9ca3af;
-  --accent: #00b894;
+  --secondary: #1e293b;
+  --secondary-foreground: #cbd5e1;
+  --muted: #334155;
+  --muted-foreground: #94a3b8;
+  --accent: #06b6d4;
   --accent-foreground: #ffffff;
-  --destructive: #e74c3c;
+  --success: #22c55e;
+  --success-foreground: #ffffff;
+  --warning: #eab308;
+  --warning-foreground: #000000;
+  --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #0f3460;
-  --input: #1a1a2e;
-  --ring: #4a6fa5;
-  --chart-1: #4a6fa5;
-  --chart-2: #e74c3c;
-  --chart-3: #00b894;
-  --chart-4: #f39c12;
-  --chart-5: #9b59b6;
+  --border: #334155;
+  --input: #1e293b;
+  --ring: #3b82f6;
+  --chart-1: #3b82f6;
+  --chart-2: #ef4444;
+  --chart-3: #22c55e;
+  --chart-4: #eab308;
+  --chart-5: #a78bfa;
   
-  --neu-shadow-light: #232342;
-  --neu-shadow-dark: #12121e;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
 }
 
 @theme inline {
@@ -93,10 +105,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: 0.75rem;
 }
 
 @layer base {
@@ -108,59 +120,76 @@
   }
 }
 
-/* Neumorphic utilities */
-.neu-card {
-  background: var(--background);
-  border-radius: var(--radius);
-  box-shadow: 
-    8px 8px 16px var(--neu-shadow-dark),
-    -8px -8px 16px var(--neu-shadow-light);
+/* Modern Card Styling */
+.card {
+  @apply bg-card rounded-lg border border-border shadow-sm hover:shadow-md transition-shadow;
 }
 
-.neu-card-inset {
-  background: var(--background);
-  border-radius: var(--radius);
-  box-shadow: 
-    inset 4px 4px 8px var(--neu-shadow-dark),
-    inset -4px -4px 8px var(--neu-shadow-light);
+.card-header {
+  @apply p-6 border-b border-border;
 }
 
-.neu-btn {
-  background: var(--background);
-  border-radius: var(--radius);
-  box-shadow: 
-    6px 6px 12px var(--neu-shadow-dark),
-    -6px -6px 12px var(--neu-shadow-light);
-  transition: all 0.2s ease;
+.card-title {
+  @apply text-lg font-semibold text-card-foreground;
 }
 
-.neu-btn:hover {
-  box-shadow: 
-    4px 4px 8px var(--neu-shadow-dark),
-    -4px -4px 8px var(--neu-shadow-light);
+.card-description {
+  @apply text-sm text-muted-foreground mt-1;
 }
 
-.neu-btn:active,
-.neu-btn-pressed {
-  box-shadow: 
-    inset 4px 4px 8px var(--neu-shadow-dark),
-    inset -4px -4px 8px var(--neu-shadow-light);
+.card-content {
+  @apply p-6;
 }
 
-.neu-input {
-  background: var(--background);
-  border-radius: calc(var(--radius) - 4px);
-  box-shadow: 
-    inset 3px 3px 6px var(--neu-shadow-dark),
-    inset -3px -3px 6px var(--neu-shadow-light);
-  border: none;
-  outline: none;
+/* Modern Button Styles */
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition-all;
 }
 
-.neu-input:focus {
-  box-shadow: 
-    inset 4px 4px 8px var(--neu-shadow-dark),
-    inset -4px -4px 8px var(--neu-shadow-light);
+.btn-primary {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 active:scale-95;
+}
+
+.btn-outline {
+  @apply border border-border bg-background text-foreground hover:bg-secondary active:scale-95;
+}
+
+.btn-ghost {
+  @apply text-foreground hover:bg-secondary active:scale-95;
+}
+
+/* Modern Input Styling */
+.input {
+  @apply w-full px-3 py-2 rounded-md border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all;
+}
+
+.textarea {
+  @apply w-full px-3 py-2 rounded-md border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-all resize-none;
+}
+
+/* Modern Badge Styles */
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-primary {
+  @apply bg-primary/10 text-primary;
+}
+
+.badge-success {
+  @apply bg-success/10 text-success;
+}
+
+.badge-warning {
+  @apply bg-warning/10 text-warning;
+}
+
+.badge-destructive {
+  @apply bg-destructive/10 text-destructive;
 }
 
 /* Animations */
@@ -220,25 +249,56 @@
   animation: float 3s ease-in-out infinite;
 }
 
-/* Dropdown menu - ensure highest z-index */
+/* Responsive text sizes */
+@media (max-width: 640px) {
+  h1 {
+    @apply text-2xl sm:text-3xl;
+  }
+  
+  h2 {
+    @apply text-xl sm:text-2xl;
+  }
+  
+  h3 {
+    @apply text-lg sm:text-xl;
+  }
+}
+
+/* Touch-friendly buttons */
+@media (hover: none) {
+  button, a {
+    @apply active:scale-95;
+  }
+}
+
+/* Responsive containers */
+.container {
+  @apply w-full px-4 sm:px-6 lg:px-8;
+}
+
+/* Responsive grid */
+.responsive-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4;
+}
+
+/* Dropdown menu - modern styling */
 .neu-dropdown-overlay {
   position: fixed;
   inset: 0;
   z-index: 9998;
+  background: transparent;
 }
 
 .neu-dropdown-menu {
   position: fixed;
   z-index: 9999;
   background: var(--background);
-  border-radius: var(--radius);
-  box-shadow: 
-    8px 8px 20px var(--neu-shadow-dark),
-    -8px -8px 20px var(--neu-shadow-light),
-    0 10px 40px rgba(0, 0, 0, 0.15);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
 }
 
-/* Scrollbar styling */
+/* Scrollbar styling - modern */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -246,11 +306,10 @@
 
 ::-webkit-scrollbar-track {
   background: var(--background);
-  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--neu-shadow-dark);
+  background: var(--muted);
   border-radius: 4px;
 }
 

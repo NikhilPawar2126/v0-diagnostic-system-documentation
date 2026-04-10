@@ -101,7 +101,7 @@ export function PatientRegistrationForm() {
               value={formData.name}
               onChange={handleChange}
               placeholder="Enter patient name"
-              className="neu-input w-full px-4 py-3 text-foreground placeholder:text-muted-foreground"
+              className="input"
               required
             />
           </div>
@@ -114,7 +114,7 @@ export function PatientRegistrationForm() {
               name="gender"
               value={formData.gender}
               onChange={handleChange}
-              className="neu-input w-full px-4 py-3 text-foreground appearance-none cursor-pointer"
+              className="input appearance-none cursor-pointer"
               required
             >
               <option value="" disabled>Select gender</option>
@@ -140,7 +140,7 @@ export function PatientRegistrationForm() {
               placeholder="Enter age"
               min="0"
               max="150"
-              className="neu-input w-full px-4 py-3 text-foreground placeholder:text-muted-foreground"
+              className="input"
               required
             />
           </div>
@@ -154,7 +154,7 @@ export function PatientRegistrationForm() {
               name="dob"
               value={formData.dob}
               onChange={handleChange}
-              className="neu-input w-full px-4 py-3 text-foreground"
+              className="input"
               required
             />
           </div>
@@ -172,7 +172,7 @@ export function PatientRegistrationForm() {
             value={formData.doctor}
             onChange={handleChange}
             placeholder="Enter referring doctor name"
-            className="neu-input w-full px-4 py-3 text-foreground placeholder:text-muted-foreground"
+            className="input"
             required
           />
         </div>
@@ -189,7 +189,7 @@ export function PatientRegistrationForm() {
             onChange={handleChange}
             placeholder="Enter diagnosis notes"
             rows={3}
-            className="neu-input w-full px-4 py-3 text-foreground placeholder:text-muted-foreground resize-none"
+            className="textarea"
           />
         </div>
 
@@ -206,7 +206,7 @@ export function PatientRegistrationForm() {
               value={formData.reference}
               onChange={handleChange}
               placeholder="Optional reference ID"
-              className="neu-input w-full px-4 py-3 text-foreground placeholder:text-muted-foreground"
+              className="input"
             />
           </div>
           <div className="space-y-2">
@@ -220,14 +220,14 @@ export function PatientRegistrationForm() {
               value={formData.mobile}
               onChange={handleChange}
               placeholder="Enter mobile number"
-              className="neu-input w-full px-4 py-3 text-foreground placeholder:text-muted-foreground"
+              className="input"
             />
           </div>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="neu-card-inset p-4 text-destructive text-sm">
+          <div className="p-4 rounded-md bg-destructive/10 text-destructive text-sm border border-destructive/20">
             {error}
           </div>
         )}
@@ -236,7 +236,7 @@ export function PatientRegistrationForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="neu-btn w-full px-6 py-4 flex items-center justify-center gap-3 text-primary font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          className="btn btn-primary w-full py-3 flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <>
