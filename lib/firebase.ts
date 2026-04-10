@@ -96,24 +96,35 @@ export async function updatePatientStatus(patientId: string, status: 'Active' | 
 
 // Scan operations
 export async function saveScan(scanData: Omit<Scan, 'id' | 'timestamp'>): Promise<Scan> {
+  console.log("[v0] Saving scan for patient:", scanData.uid)
   const scan: Omit<Scan, 'id'> = {
     ...scanData,
     timestamp: Timestamp.now(),
   }
   
   const docRef = await addDoc(collection(db, 'scans'), scan)
+  console.log("[v0] Scan saved successfully with ID:", docRef.id)
   return { ...scan, id: docRef.id }
 }
 
 export async function getScansForPatient(uid: string): Promise<Scan[]> {
   const scansRef = collection(db, 'scans')
-  const q = query(scansRef, where('uid', '==', uid), orderBy('timestamp', 'desc'))
+  // Use only where clause to avoid composite index requirement
+  const q = query(scansRef, where('uid', '==', uid))
   const snapshot = await getDocs(q)
   
-  return snapshot.docs.map(doc => ({
+  // Sort in memory instead of Firestore to avoid index requirement
+  const scans = snapshot.docs.map(doc => ({
     id: doc.id,
     ...doc.data()
   } as Scan))
+  
+  // Sort by timestamp descending (newest first)
+  return scans.sort((a, b) => {
+    const timeA = a.timestamp instanceof Timestamp ? a.timestamp.toMillis() : new Date(a.timestamp).getTime()
+    const timeB = b.timestamp instanceof Timestamp ? b.timestamp.toMillis() : new Date(b.timestamp).getTime()
+    return timeB - timeA
+  })
 }
 
 export { db }
