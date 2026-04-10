@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
+import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { 
   ChevronDown, 
@@ -23,6 +24,39 @@ import { Timestamp } from "firebase/firestore"
 interface PatientRowProps {
   patient: Patient
   onStatusChange: () => void
+}
+
+function DropdownPortal({
+  children,
+  onClose,
+}: {
+  children: React.ReactNode
+  onClose: () => void
+}) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
+
+  if (!mounted) return null
+
+  return createPortal(
+    <>
+      {/* Full screen overlay to close menu on outside click */}
+      <div
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 99998,
+        }}
+        onClick={onClose}
+      />
+      {children}
+    </>,
+    document.body
+  )
 }
 
 export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
@@ -79,7 +113,7 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
 
   const handleDownloadPDF = async () => {
     setShowMenu(false)
-    
+
     if (scans.length === 0) {
       setLoadingScans(true)
       try {
@@ -98,19 +132,19 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
 
   const handleMenuToggle = (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!showMenu && menuButtonRef.current) {
+    if (menuButtonRef.current) {
       const rect = menuButtonRef.current.getBoundingClientRect()
       setMenuPosition({
-        top: rect.bottom + 8,
-        left: rect.right - 180,
+        top: rect.bottom + window.scrollY + 8,
+        left: Math.min(rect.right - 190, window.innerWidth - 200),
       })
     }
-    setShowMenu(!showMenu)
+    setShowMenu((prev) => !prev)
   }
 
   return (
     <>
-      <div className="neu-card overflow-visible">
+      <div className="neu-card overflow-hidden">
         {/* Main Row */}
         <div
           className="flex items-center gap-4 p-4 cursor-pointer hover:bg-secondary/30 transition-colors"
@@ -118,29 +152,29 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
         >
           {/* Status Badge */}
           <StatusIndicator status={patient.status === "Active" ? "active" : "inactive"} size="sm" />
-          
+
           {/* UID */}
           <span className="text-primary font-mono font-semibold min-w-[60px]">
             {patient.uid}
           </span>
-          
+
           {/* Name */}
           <span className="font-medium text-foreground flex-1">
             {patient.name}
           </span>
-          
+
           {/* Gender */}
           <span className="text-muted-foreground hidden sm:block w-20">
             {patient.gender}
           </span>
-          
+
           {/* Diagnosis */}
           <span className="text-muted-foreground hidden md:block flex-1 truncate max-w-[200px]">
             {patient.diagnosis || "No diagnosis"}
           </span>
-          
+
           {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             {/* Menu Button */}
             <button
               ref={menuButtonRef}
@@ -153,9 +187,9 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
                 <MoreVertical className="w-4 h-4 text-muted-foreground" />
               )}
             </button>
-            
+
             {/* Expand Arrow */}
-            <div className="neu-btn p-2 rounded-lg">
+            <div className="neu-btn p-2 rounded-lg cursor-pointer" onClick={handleExpand}>
               {isExpanded ? (
                 <ChevronUp className="w-4 h-4 text-muted-foreground" />
               ) : (
@@ -164,14 +198,14 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
             </div>
           </div>
         </div>
-        
+
         {/* Expanded Panel */}
         {isExpanded && (
           <div className="border-t border-border bg-secondary/20 p-4">
             <h4 className="text-sm font-medium text-muted-foreground mb-3">
               Examination History
             </h4>
-            
+
             {loadingScans ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -217,46 +251,41 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
         )}
       </div>
 
-      {/* Fixed Dropdown Menu - Rendered outside card to escape stacking context */}
+      {/* Dropdown Menu rendered via Portal directly into document.body */}
       {showMenu && (
-        <>
+        <DropdownPortal onClose={() => setShowMenu(false)}>
           <div
-            className="neu-dropdown-overlay"
-            onClick={(e) => {
-              e.stopPropagation()
-              setShowMenu(false)
+            style={{
+              position: "absolute",
+              top: menuPosition.top,
+              left: menuPosition.left,
+              zIndex: 99999,
+              minWidth: "190px",
+              background: "var(--background)",
+              borderRadius: "var(--radius)",
+              boxShadow:
+                "10px 10px 24px var(--neu-shadow-dark), -10px -10px 24px var(--neu-shadow-light), 0 8px 32px rgba(0,0,0,0.18)",
+              padding: "8px",
             }}
-          />
-          <div 
-            className="neu-dropdown-menu p-2 min-w-[180px]"
-            style={{ top: menuPosition.top, left: menuPosition.left }}
+            onClick={(e) => e.stopPropagation()}
           >
             <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleNewExamination()
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 text-left text-sm"
+              onClick={handleNewExamination}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 text-left text-sm text-foreground"
             >
               <Stethoscope className="w-4 h-4 text-primary" />
               New Examination
             </button>
             <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleDownloadPDF()
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 text-left text-sm"
+              onClick={handleDownloadPDF}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 text-left text-sm text-foreground"
             >
               <Download className="w-4 h-4 text-accent" />
               Save Data (PDF)
             </button>
             <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleToggleStatus()
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 text-left text-sm"
+              onClick={handleToggleStatus}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 text-left text-sm text-foreground"
             >
               {patient.status === "Active" ? (
                 <>
@@ -271,7 +300,7 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
               )}
             </button>
           </div>
-        </>
+        </DropdownPortal>
       )}
 
       {/* Print Report Modal */}
