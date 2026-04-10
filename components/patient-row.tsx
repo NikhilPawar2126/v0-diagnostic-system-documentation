@@ -97,7 +97,7 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
   }
 
   return (
-    <div className="neu-card overflow-hidden">
+    <div className={`neu-card overflow-visible ${showMenu ? "relative z-50" : ""}`}>
       {/* Main Row */}
       <div
         className="flex items-center gap-4 p-4 cursor-pointer hover:bg-secondary/30 transition-colors"
@@ -148,13 +148,13 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
             {showMenu && (
               <>
                 <div
-                  className="fixed inset-0 z-10"
+                  className="fixed inset-0 z-40"
                   onClick={(e) => {
                     e.stopPropagation()
                     setShowMenu(false)
                   }}
                 />
-                <div className="absolute right-0 top-full mt-2 z-20 neu-card p-2 min-w-[180px]">
+                <div className="absolute right-0 top-full mt-2 z-50 neu-card p-2 min-w-[180px] shadow-lg">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
