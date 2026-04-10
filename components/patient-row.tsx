@@ -15,10 +15,9 @@ import {
   Ruler,
   Waves
 } from "lucide-react"
-import { jsPDF } from "jspdf"
-import autoTable from "jspdf-autotable"
 import { type Patient, type Scan, getScansForPatient, updatePatientStatus } from "@/lib/firebase"
 import { StatusIndicator } from "./status-indicator"
+import { PrintReport } from "./print-report"
 import { Timestamp } from "firebase/firestore"
 
 interface PatientRowProps {
@@ -34,6 +33,7 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
   const [scans, setScans] = useState<Scan[]>([])
   const [loadingScans, setLoadingScans] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [showPrintReport, setShowPrintReport] = useState(false)
 
   const handleExpand = async () => {
     if (!isExpanded && scans.length === 0) {
@@ -80,66 +80,21 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
     setShowMenu(false)
     
     // Fetch latest scans if not already loaded
-    let scanData = scans
     if (scans.length === 0) {
+      setLoadingScans(true)
       try {
-        scanData = await getScansForPatient(patient.uid)
-        setScans(scanData)
+        const fetchedScans = await getScansForPatient(patient.uid)
+        setScans(fetchedScans)
       } catch (error) {
         console.error("[v0] Error fetching scans for PDF:", error)
+        setLoadingScans(false)
+        return
       }
+      setLoadingScans(false)
     }
 
-    const doc = new jsPDF()
-    
-    // Header
-    doc.setFontSize(20)
-    doc.setTextColor(59, 89, 152) // Primary color
-    doc.text("Marma Diagnostic Report", 105, 20, { align: "center" })
-    
-    // Patient Info
-    doc.setFontSize(12)
-    doc.setTextColor(45, 52, 54) // Foreground color
-    doc.text(`Patient ID: ${patient.uid}`, 20, 40)
-    doc.text(`Name: ${patient.name}`, 20, 50)
-    doc.text(`Gender: ${patient.gender}`, 20, 60)
-    doc.text(`Age: ${patient.age}`, 120, 50)
-    doc.text(`DOB: ${patient.dob}`, 120, 60)
-    doc.text(`Doctor: ${patient.doctor}`, 20, 70)
-    doc.text(`Diagnosis: ${patient.diagnosis || "N/A"}`, 20, 80)
-    doc.text(`Status: ${patient.status}`, 20, 90)
-    
-    // Examination History
-    doc.setFontSize(14)
-    doc.text("Examination History", 20, 110)
-    
-    if (scanData.length > 0) {
-      autoTable(doc, {
-        startY: 120,
-        head: [["Exam #", "Date/Time", "Distance (cm)", "Frequency (Hz)", "CHI (%)", "Temp (°C)"]],
-        body: scanData.map((scan, index) => [
-          `#${index + 1}`,
-          formatTimestamp(scan.timestamp),
-          scan.distance.toFixed(2),
-          scan.frequency.toFixed(2),
-          scan.chi?.toFixed(2) || "N/A",
-          scan.temperature?.toFixed(2) || "N/A",
-        ]),
-        theme: "striped",
-        headStyles: { fillColor: [59, 89, 152] },
-      })
-    } else {
-      doc.setFontSize(10)
-      doc.text("No examination records found.", 20, 125)
-    }
-    
-    // Footer
-    const pageHeight = doc.internal.pageSize.height
-    doc.setFontSize(8)
-    doc.setTextColor(99, 110, 114) // Muted foreground
-    doc.text(`Generated on ${new Date().toLocaleString()}`, 105, pageHeight - 10, { align: "center" })
-    
-    doc.save(`${patient.uid}_report.pdf`)
+    // Show the print report modal
+    setShowPrintReport(true)
   }
 
   return (
@@ -314,6 +269,15 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
             </div>
           )}
         </div>
+      )}
+
+      {/* Print Report Modal */}
+      {showPrintReport && (
+        <PrintReport
+          patient={patient}
+          scans={scans}
+          onClose={() => setShowPrintReport(false)}
+        />
       )}
     </div>
   )
