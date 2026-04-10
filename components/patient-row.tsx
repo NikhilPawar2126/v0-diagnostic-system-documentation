@@ -159,7 +159,10 @@ export function PatientRow({ patient, onStatusChange }: PatientRowProps) {
           >
             <button
               ref={menuButtonRef}
-              onClick={openMenu}
+              onMouseDown={(e) => {
+                e.stopPropagation()
+                openMenu(e)
+              }}
               className="neu-btn p-2 rounded-lg"
               aria-label="Open patient menu"
             >
