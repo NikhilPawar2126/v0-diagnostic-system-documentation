@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Play, Square, User, Activity, Waves, Ruler, ArrowLeft, Sliders, Zap, Layers, Map as MapIcon } from "lucide-react"
+import { Play, Square, Save, User, Activity, Waves, Ruler, ArrowLeft, Sliders, Zap, Layers, Map as MapIcon } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { saveScan, type Patient } from "@/lib/firebase"
 import { MetricCard } from "./metric-card"
@@ -45,8 +45,8 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
     setScanData([])
     startTimeRef.current = Date.now()
 
-    // Connect to HiveMQ using WebSocket
-    const client = mqtt.connect("ws://broker.hivemq.com:8000/mqtt", { 
+    // Connect to HiveMQ using wss for secure WebSocket (required on Vercel HTTPS)
+    const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", { 
         reconnectPeriod: 1000, // automatic reconnect
     })
     mqttClientRef.current = client
@@ -96,14 +96,16 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
   }
 
 
-  const stopScanning = async () => {
+  const stopScanning = () => {
     if (mqttClientRef.current) {
       mqttClientRef.current.end()
       mqttClientRef.current = null
     }
     setIsScanning(false)
-    setIsSaving(true)
+  }
 
+  const saveData = async () => {
+    setIsSaving(true)
     try {
       await saveScan({
         uid: patient.uid,
@@ -173,13 +175,13 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
             </div>
           </div>
 
-          {/* Control Button */}
-          <div className="neu-card p-6">
+          {/* Control Buttons */}
+          <div className="neu-card p-6 space-y-4">
             {!isScanning ? (
               <button
                 onClick={startScanning}
                 disabled={isSaving}
-                className="neu-btn w-full py-6 flex items-center justify-center gap-3 text-accent font-semibold text-lg disabled:opacity-50"
+                className="neu-btn w-full py-4 flex items-center justify-center gap-3 text-accent font-semibold text-lg disabled:opacity-50"
               >
                 <Play className="w-8 h-8" />
                 START EXAMINING
@@ -188,12 +190,21 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
               <button
                 onClick={stopScanning}
                 disabled={isSaving}
-                className="neu-btn w-full py-6 flex items-center justify-center gap-3 text-destructive font-semibold text-lg disabled:opacity-50"
+                className="neu-btn w-full py-4 flex items-center justify-center gap-3 text-destructive font-semibold text-lg disabled:opacity-50"
               >
                 <Square className="w-8 h-8" />
-                {isSaving ? "SAVING..." : "STOP & SAVE"}
+                STOP EXAMINING
               </button>
             )}
+
+            <button
+              onClick={saveData}
+              disabled={isScanning || isSaving}
+              className="neu-btn w-full py-4 flex items-center justify-center gap-3 text-primary font-semibold text-lg disabled:opacity-50"
+            >
+              <Save className="w-6 h-6" />
+              {isSaving ? "SAVING..." : "SAVE SCAN"}
+            </button>
           </div>
         </div>
 
