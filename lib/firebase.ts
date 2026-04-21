@@ -36,8 +36,12 @@ export interface Scan {
   uid: string
   distance: number
   frequency: number
-  chi: number
-  temperature: number
+  chi: number | string
+  temperature?: number
+  gain?: number
+  dr?: number
+  sa?: string
+  map?: string
   timestamp: Timestamp | Date
 }
 

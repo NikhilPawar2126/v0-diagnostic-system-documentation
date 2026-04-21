@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Play, Square, User, Activity, Waves, Ruler, Thermometer, ArrowLeft } from "lucide-react"
+import { Play, Square, User, Activity, Waves, Ruler, Thermometer, ArrowLeft, Sliders, Zap, Layers, Map as MapIcon } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { saveScan, type Patient } from "@/lib/firebase"
 import { MetricCard } from "./metric-card"
@@ -25,10 +25,14 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [scanData, setScanData] = useState<ScanData[]>([])
   const [currentMetrics, setCurrentMetrics] = useState({
-    chi: 0,
+    chi: "B-Mode",
     frequency: 0,
     distance: 0,
     temperature: 36.5,
+    gain: 0,
+    dr: 0,
+    sa: "3/1",
+    map: "Gray"
   })
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
   const startTimeRef = useRef<number>(0)
@@ -40,11 +44,16 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
     const baseChi = 75
     const baseTemp = 36.5
 
+    const distanceVal = baseDistance + (Math.random() - 0.5) * 4
     return {
-      distance: baseDistance + (Math.random() - 0.5) * 4,
+      distance: distanceVal,
       frequency: baseFrequency + (Math.random() - 0.5) * 8,
-      chi: baseChi + (Math.random() - 0.5) * 20,
+      chi: "B-Mode",
       temperature: baseTemp + (Math.random() - 0.5) * 1,
+      gain: 40 + (distanceVal * 1.2) + (Math.random() - 0.5) * 5,
+      dr: 70 - (distanceVal * 0.5) + (Math.random() - 0.5) * 2,
+      sa: "3/1",
+      map: "Gray"
     }
   }, [])
 
@@ -86,8 +95,12 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
         uid: patient.uid,
         distance: parseFloat(currentMetrics.distance.toFixed(2)),
         frequency: parseFloat(currentMetrics.frequency.toFixed(2)),
-        chi: parseFloat(currentMetrics.chi.toFixed(2)),
+        chi: currentMetrics.chi,
         temperature: parseFloat(currentMetrics.temperature.toFixed(2)),
+        gain: parseFloat(currentMetrics.gain.toFixed(2)),
+        dr: parseFloat(currentMetrics.dr.toFixed(2)),
+        sa: currentMetrics.sa,
+        map: currentMetrics.map,
       })
       router.push("/records")
     } catch (error) {
@@ -175,12 +188,12 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
           {/* Metrics Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <MetricCard
-              label="CHI Metric"
-              value={currentMetrics.chi.toFixed(1)}
-              unit="%"
-              icon={<Activity className="w-5 h-5" />}
+              label="Distance"
+              value={currentMetrics.distance.toFixed(1)}
+              unit="cm"
+              icon={<Ruler className="w-5 h-5" />}
               isLive={isScanning}
-              color="blue"
+              color="green"
             />
             <MetricCard
               label="Frequency"
@@ -191,12 +204,44 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
               color="red"
             />
             <MetricCard
-              label="Distance"
-              value={currentMetrics.distance.toFixed(1)}
-              unit="cm"
-              icon={<Ruler className="w-5 h-5" />}
+              label="Gain (Gn)"
+              value={currentMetrics.gain.toFixed(1)}
+              unit="dB"
+              icon={<Zap className="w-5 h-5" />}
               isLive={isScanning}
+              color="yellow"
+            />
+            <MetricCard
+              label="Dynamic Range (DR)"
+              value={currentMetrics.dr.toFixed(1)}
+              unit="dB"
+              icon={<Sliders className="w-5 h-5" />}
+              isLive={isScanning}
+              color="blue"
+            />
+            <MetricCard
+              label="CHI"
+              value={currentMetrics.chi}
+              unit=""
+              icon={<Activity className="w-5 h-5" />}
+              isLive={isScanning}
+              color="blue"
+            />
+            <MetricCard
+              label="S/A"
+              value={currentMetrics.sa}
+              unit=""
+              icon={<Layers className="w-5 h-5" />}
+              isLive={false}
               color="green"
+            />
+            <MetricCard
+              label="Map"
+              value={currentMetrics.map}
+              unit=""
+              icon={<MapIcon className="w-5 h-5" />}
+              isLive={false}
+              color="yellow"
             />
             <MetricCard
               label="Temperature"
@@ -204,7 +249,7 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
               unit="°C"
               icon={<Thermometer className="w-5 h-5" />}
               isLive={isScanning}
-              color="yellow"
+              color="red"
             />
           </div>
 

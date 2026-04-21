@@ -117,14 +117,15 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
     if (scanData.length > 0) {
       autoTable(doc, {
         startY: 120,
-        head: [["Exam #", "Date/Time", "Distance (cm)", "Frequency (Hz)", "CHI (%)", "Temp (°C)"]],
+        head: [["Exam #", "Date/Time", "Distance", "Frequency", "Gain", "DR", "CHI"]],
         body: scanData.map((scan, index) => [
           `#${index + 1}`,
           formatTimestamp(scan.timestamp),
-          scan.distance.toFixed(2),
-          scan.frequency.toFixed(2),
-          scan.chi?.toFixed(2) || "N/A",
-          scan.temperature?.toFixed(2) || "N/A",
+          `${scan.distance.toFixed(1)} cm`,
+          `${scan.frequency.toFixed(1)} Hz`,
+          scan.gain ? `${scan.gain.toFixed(1)} dB` : "N/A",
+          scan.dr ? `${scan.dr.toFixed(1)} dB` : "N/A",
+          typeof scan.chi === 'number' ? scan.chi.toFixed(1) : scan.chi || "N/A",
         ]),
         theme: "striped",
         headStyles: { fillColor: [59, 89, 152] },
