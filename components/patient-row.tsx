@@ -15,8 +15,7 @@ import {
   Ruler,
   Waves
 } from "lucide-react"
-import { jsPDF } from "jspdf"
-import autoTable from "jspdf-autotable"
+
 import { type Patient, type Scan, getScansForPatient, updatePatientStatus } from "@/lib/firebase"
 import { StatusIndicator } from "./status-indicator"
 import { Timestamp } from "firebase/firestore"
@@ -90,6 +89,8 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
       }
     }
 
+    const { jsPDF } = await import("jspdf")
+    const autoTable = (await import("jspdf-autotable")).default
     const doc = new jsPDF()
     
     // Header

@@ -3,7 +3,12 @@
 import { useEffect, useState, useCallback } from "react"
 import { Search, Filter, Loader2, FileText, Users } from "lucide-react"
 import { getPatients, getScansForPatient, type Patient } from "@/lib/firebase"
-import { PatientRow } from "@/components/patient-row"
+import dynamic from "next/dynamic"
+
+const PatientRow = dynamic(
+  () => import("@/components/patient-row").then((mod) => mod.PatientRow),
+  { ssr: false }
+)
 
 interface PatientWithTestStatus extends Patient {
   isTested: boolean
