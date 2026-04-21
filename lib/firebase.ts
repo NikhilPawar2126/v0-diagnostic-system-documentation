@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app'
-import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, Timestamp } from 'firebase/firestore'
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -118,6 +118,16 @@ export async function getScansForPatient(uid: string): Promise<Scan[]> {
     id: doc.id,
     ...doc.data()
   } as Scan))
+}
+
+export async function deletePatient(patientId: string): Promise<void> {
+  const patientRef = doc(db, 'patients', patientId)
+  await deleteDoc(patientRef)
+}
+
+export async function deleteScan(scanId: string): Promise<void> {
+  const scanRef = doc(db, 'scans', scanId)
+  await deleteDoc(scanRef)
 }
 
 export { db }

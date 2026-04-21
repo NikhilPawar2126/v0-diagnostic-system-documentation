@@ -18,10 +18,19 @@ import {
   Zap,
   Sliders,
   Layers,
-  Map as MapIcon
+  Map as MapIcon,
+  Trash2
 } from "lucide-react"
 
-import { type Patient, type Scan, getScansForPatient, updatePatientStatus } from "@/lib/firebase"
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+
+import { type Patient, type Scan, getScansForPatient, updatePatientStatus, deletePatient, deleteScan } from "@/lib/firebase"
 import { StatusIndicator } from "./status-indicator"
 import { Timestamp } from "firebase/firestore"
 
@@ -34,7 +43,6 @@ interface PatientRowProps {
 export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProps) {
   const router = useRouter()
   const [isExpanded, setIsExpanded] = useState(false)
-  const [showMenu, setShowMenu] = useState(false)
   const [scans, setScans] = useState<Scan[]>([])
   const [loadingScans, setLoadingScans] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
@@ -55,12 +63,10 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
   }
 
   const handleNewExamination = () => {
-    setShowMenu(false)
     router.push(`/scan/${patient.uid}`)
   }
 
   const handleToggleStatus = async () => {
-    setShowMenu(false)
     setUpdatingStatus(true)
     try {
       const newStatus = patient.status === "Active" ? "Inactive" : "Active"
@@ -73,6 +79,28 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
     }
   }
 
+  const handleDeletePatient = async () => {
+    if (confirm("Are you sure you want to delete this patient? This action cannot be undone.")) {
+      try {
+        await deletePatient(patient.id!)
+        onStatusChange()
+      } catch (error) {
+        console.error("[v0] Error deleting patient:", error)
+      }
+    }
+  }
+
+  const handleDeleteScan = async (scanId: string) => {
+    if (confirm("Are you sure you want to delete this record?")) {
+      try {
+        await deleteScan(scanId)
+        setScans(scans.filter(s => s.id !== scanId))
+      } catch (error) {
+        console.error("[v0] Error deleting scan:", error)
+      }
+    }
+  }
+
   const formatTimestamp = (timestamp: Timestamp | Date) => {
     if (timestamp instanceof Timestamp) {
       return timestamp.toDate().toLocaleString()
@@ -81,7 +109,6 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
   }
 
   const handleDownloadPDF = async () => {
-    setShowMenu(false)
     
     // Fetch latest scans if not already loaded
     let scanData = scans
@@ -193,74 +220,48 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
         {/* Actions */}
         <div className="flex items-center gap-2">
           {/* Menu Button */}
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowMenu(!showMenu)
-              }}
-              className="neu-btn p-2 rounded-lg"
-            >
-              {updatingStatus ? (
-                <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-              ) : (
-                <MoreVertical className="w-4 h-4 text-muted-foreground" />
-              )}
-            </button>
-            
-            {/* Dropdown Menu */}
-            {showMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowMenu(false)
-                  }}
-                />
-                <div className="absolute right-0 top-full mt-2 z-20 neu-card p-2 min-w-[180px]">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleNewExamination()
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 text-left text-sm"
-                  >
-                    <Stethoscope className="w-4 h-4 text-primary" />
-                    New Examination
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDownloadPDF()
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 text-left text-sm"
-                  >
-                    <Download className="w-4 h-4 text-accent" />
-                    Save Data (PDF)
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleToggleStatus()
-                    }}
-                    className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-secondary/50 text-left text-sm"
-                  >
-                    {patient.status === "Active" ? (
-                      <>
-                        <ToggleLeft className="w-4 h-4 text-destructive" />
-                        Mark Inactive
-                      </>
-                    ) : (
-                      <>
-                        <ToggleRight className="w-4 h-4 text-accent" />
-                        Mark Active
-                      </>
-                    )}
-                  </button>
-                </div>
-              </>
-            )}
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="neu-btn p-2 rounded-lg outline-none"
+                >
+                  {updatingStatus ? (
+                    <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                  ) : (
+                    <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[200px] z-50">
+                <DropdownMenuItem onClick={handleNewExamination} className="cursor-pointer">
+                  <Stethoscope className="w-4 h-4 text-primary mr-2" />
+                  New Examination
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadPDF} className="cursor-pointer">
+                  <Download className="w-4 h-4 text-accent mr-2" />
+                  Save Data (PDF)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleToggleStatus} className="cursor-pointer">
+                  {patient.status === "Active" ? (
+                    <>
+                      <ToggleLeft className="w-4 h-4 text-destructive mr-2" />
+                      Mark Inactive
+                    </>
+                  ) : (
+                    <>
+                      <ToggleRight className="w-4 h-4 text-accent mr-2" />
+                      Mark Active
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDeletePatient} className="cursor-pointer text-destructive focus:bg-destructive/10 focus:text-destructive">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete Patient
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           
           {/* Expand Arrow */}
@@ -298,14 +299,26 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {scans.map((scan, index) => (
-                <div key={scan.id} className="neu-card-inset p-4">
+                <div key={scan.id} className="neu-card-inset p-4 relative group">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-primary">
                       Exam #{scans.length - index}
                     </span>
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Calendar className="w-3 h-3" />
-                      {formatTimestamp(scan.timestamp).split(",")[0]}
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Calendar className="w-3 h-3" />
+                        {formatTimestamp(scan.timestamp).split(",")[0]}
+                      </div>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteScan(scan.id!);
+                        }}
+                        className="p-1 rounded-md text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10"
+                        title="Delete Record"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-2 gap-y-3 gap-x-2 text-xs mt-3">
