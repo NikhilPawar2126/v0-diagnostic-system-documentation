@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Play, Square, User, Activity, Waves, Ruler, Thermometer, ArrowLeft, Sliders, Zap, Layers, Map as MapIcon } from "lucide-react"
+import { Play, Square, User, Activity, Waves, Ruler, ArrowLeft, Sliders, Zap, Layers, Map as MapIcon } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { saveScan, type Patient } from "@/lib/firebase"
 import { MetricCard } from "./metric-card"
 import { SensorAnimation } from "./sensor-animation"
 import { StatusIndicator } from "./status-indicator"
+import mqtt from "mqtt"
 
 interface ScanPageContentProps {
   patient: Patient
@@ -24,68 +25,81 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
   const [isScanning, setIsScanning] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [scanData, setScanData] = useState<ScanData[]>([])
-  const [currentMetrics, setCurrentMetrics] = useState({
-    chi: "B-Mode",
-    frequency: 0,
-    distance: 0,
-    temperature: 36.5,
-    gain: 0,
-    dr: 0,
-    sa: "3/1",
-    map: "Gray"
-  })
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  
+  // Real-time sensor state variables as requested
+  const [distance, setDistance] = useState(0)
+  const [frequency, setFrequency] = useState(0)
+  const [gain, setGain] = useState(0)
+  const [chi, setChi] = useState(0)
+  const [dr, setDr] = useState(0)
+
+  // Static defined values
+  const sa = "3/4"
+  const map = "A/0"
+
+  const mqttClientRef = useRef<mqtt.MqttClient | null>(null)
   const startTimeRef = useRef<number>(0)
-
-  // Generate simulated sensor data
-  const generateMetrics = useCallback(() => {
-    const baseDistance = 15
-    const baseFrequency = 42
-    const baseChi = 75
-    const baseTemp = 36.5
-
-    const distanceVal = baseDistance + (Math.random() - 0.5) * 4
-    return {
-      distance: distanceVal,
-      frequency: baseFrequency + (Math.random() - 0.5) * 8,
-      chi: "B-Mode",
-      temperature: baseTemp + (Math.random() - 0.5) * 1,
-      gain: 40 + (distanceVal * 1.2) + (Math.random() - 0.5) * 5,
-      dr: 70 - (distanceVal * 0.5) + (Math.random() - 0.5) * 2,
-      sa: "3/1",
-      map: "Gray"
-    }
-  }, [])
 
   const startScanning = () => {
     setIsScanning(true)
     setScanData([])
     startTimeRef.current = Date.now()
 
-    intervalRef.current = setInterval(() => {
-      const metrics = generateMetrics()
-      const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000)
+    // Connect to HiveMQ using WebSocket
+    const client = mqtt.connect("ws://broker.hivemq.com:8000/mqtt", { 
+        reconnectPeriod: 1000, // automatic reconnect
+    })
+    mqttClientRef.current = client
 
-      setCurrentMetrics(metrics)
-      setScanData((prev) => {
-        const newData = [
-          ...prev,
-          {
-            time: elapsedTime,
-            distance: parseFloat(metrics.distance.toFixed(2)),
-            frequency: parseFloat(metrics.frequency.toFixed(2)),
-          },
-        ]
-        // Keep only last 20 data points for the graph
-        return newData.slice(-20)
-      })
-    }, 1000)
+    client.on("connect", () => {
+      console.log("[v0] Connected to MQTT broker. Subscribing to marma/distance...")
+      client.subscribe("marma/distance")
+    })
+    
+    // Auto reconnect handlers
+    client.on("reconnect", () => {
+      console.log("[v0] Reconnecting to MQTT broker...")
+    })
+    
+    client.on("close", () => {
+      console.log("[v0] Disconnected from MQTT broker.")
+    })
+
+    client.on("message", (topic, message) => {
+      try {
+        const data = JSON.parse(message.toString())
+        const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000)
+
+        // Update exact state variables
+        setDistance(data.distance || 0)
+        setFrequency(data.frequency || 0)
+        setGain(data.gain || 0)
+        setChi(data.chi || 0)
+        setDr(data.dr || 0)
+
+        setScanData((prev) => {
+          const newData = [
+            ...prev,
+            {
+              time: elapsedTime,
+              distance: parseFloat((data.distance || 0).toFixed(2)),
+              frequency: parseFloat((data.frequency || 0).toFixed(2)),
+            },
+          ]
+          // Keep only last 20 data points for the graph
+          return newData.slice(-20)
+        })
+      } catch (error) {
+        console.error("[v0] Error parsing MQTT message:", error)
+      }
+    })
   }
 
+
   const stopScanning = async () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
+    if (mqttClientRef.current) {
+      mqttClientRef.current.end()
+      mqttClientRef.current = null
     }
     setIsScanning(false)
     setIsSaving(true)
@@ -93,14 +107,14 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
     try {
       await saveScan({
         uid: patient.uid,
-        distance: parseFloat(currentMetrics.distance.toFixed(2)),
-        frequency: parseFloat(currentMetrics.frequency.toFixed(2)),
-        chi: currentMetrics.chi,
-        temperature: parseFloat(currentMetrics.temperature.toFixed(2)),
-        gain: parseFloat(currentMetrics.gain.toFixed(2)),
-        dr: parseFloat(currentMetrics.dr.toFixed(2)),
-        sa: currentMetrics.sa,
-        map: currentMetrics.map,
+        distance: distance,
+        frequency: frequency,
+        chi: chi.toString(),
+        temperature: 36.5, // Not in hardware display but needed for DB schema
+        gain: gain,
+        dr: dr,
+        sa: sa,
+        map: map,
       })
       router.push("/records")
     } catch (error) {
@@ -111,8 +125,8 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
 
   useEffect(() => {
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
+      if (mqttClientRef.current) {
+        mqttClientRef.current.end()
       }
     }
   }, [])
@@ -186,50 +200,34 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Metrics Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <MetricCard
-              label="Distance"
-              value={currentMetrics.distance.toFixed(1)}
-              unit="cm"
-              icon={<Ruler className="w-5 h-5" />}
-              isLive={isScanning}
-              color="green"
-            />
-            <MetricCard
-              label="Frequency"
-              value={currentMetrics.frequency.toFixed(1)}
-              unit="Hz"
-              icon={<Waves className="w-5 h-5" />}
-              isLive={isScanning}
-              color="red"
-            />
-            <MetricCard
-              label="Gain (Gn)"
-              value={currentMetrics.gain.toFixed(1)}
-              unit="dB"
-              icon={<Zap className="w-5 h-5" />}
-              isLive={isScanning}
-              color="yellow"
-            />
-            <MetricCard
-              label="Dynamic Range (DR)"
-              value={currentMetrics.dr.toFixed(1)}
-              unit="dB"
-              icon={<Sliders className="w-5 h-5" />}
-              isLive={isScanning}
-              color="blue"
-            />
+          <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             <MetricCard
               label="CHI"
-              value={currentMetrics.chi}
+              value={chi}
               unit=""
               icon={<Activity className="w-5 h-5" />}
               isLive={isScanning}
               color="blue"
             />
             <MetricCard
+              label="Frq"
+              value={frequency}
+              unit=""
+              icon={<Waves className="w-5 h-5" />}
+              isLive={isScanning}
+              color="red"
+            />
+            <MetricCard
+              label="Gn"
+              value={gain}
+              unit=""
+              icon={<Zap className="w-5 h-5" />}
+              isLive={isScanning}
+              color="yellow"
+            />
+            <MetricCard
               label="S/A"
-              value={currentMetrics.sa}
+              value={sa}
               unit=""
               icon={<Layers className="w-5 h-5" />}
               isLive={false}
@@ -237,19 +235,27 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
             />
             <MetricCard
               label="Map"
-              value={currentMetrics.map}
+              value={map}
               unit=""
               icon={<MapIcon className="w-5 h-5" />}
               isLive={false}
               color="yellow"
             />
             <MetricCard
-              label="Temperature"
-              value={currentMetrics.temperature.toFixed(1)}
-              unit="°C"
-              icon={<Thermometer className="w-5 h-5" />}
+              label="D"
+              value={distance}
+              unit="cm"
+              icon={<Ruler className="w-5 h-5" />}
               isLive={isScanning}
-              color="red"
+              color="green"
+            />
+            <MetricCard
+              label="DR"
+              value={dr}
+              unit=""
+              icon={<Sliders className="w-5 h-5" />}
+              isLive={isScanning}
+              color="blue"
             />
           </div>
 
@@ -310,3 +316,4 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
     </div>
   )
 }
+
