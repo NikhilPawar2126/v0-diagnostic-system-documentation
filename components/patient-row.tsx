@@ -13,7 +13,12 @@ import {
   Loader2,
   Calendar,
   Ruler,
-  Waves
+  Waves,
+  Activity,
+  Zap,
+  Sliders,
+  Layers,
+  Map as MapIcon
 } from "lucide-react"
 
 import { type Patient, type Scan, getScansForPatient, updatePatientStatus } from "@/lib/firebase"
@@ -117,7 +122,7 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
     if (scanData.length > 0) {
       autoTable(doc, {
         startY: 120,
-        head: [["Exam #", "Date/Time", "Distance", "Frequency", "Gain", "DR", "CHI"]],
+        head: [["Exam #", "Date/Time", "Distance", "Frequency", "Gain", "DR", "CHI", "S/A", "Map"]],
         body: scanData.map((scan, index) => [
           `#${index + 1}`,
           formatTimestamp(scan.timestamp),
@@ -126,6 +131,8 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
           scan.gain ? `${scan.gain.toFixed(1)} dB` : "N/A",
           scan.dr ? `${scan.dr.toFixed(1)} dB` : "N/A",
           typeof scan.chi === 'number' ? scan.chi.toFixed(1) : scan.chi || "N/A",
+          scan.sa || "N/A",
+          scan.map || "N/A",
         ]),
         theme: "striped",
         headStyles: { fillColor: [59, 89, 152] },
@@ -301,14 +308,34 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
                       {formatTimestamp(scan.timestamp).split(",")[0]}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Ruler className="w-3 h-3 text-accent" />
-                      <span className="text-foreground">{scan.distance.toFixed(1)} cm</span>
+                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-y-3 gap-x-2 text-xs mt-3">
+                    <div className="flex items-center gap-1.5" title="Distance">
+                      <Ruler className="w-3.5 h-3.5 text-accent" />
+                      <span className="text-foreground font-medium">{scan.distance.toFixed(1)} cm</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Waves className="w-3 h-3 text-destructive" />
-                      <span className="text-foreground">{scan.frequency.toFixed(1)} Hz</span>
+                    <div className="flex items-center gap-1.5" title="Frequency">
+                      <Waves className="w-3.5 h-3.5 text-destructive" />
+                      <span className="text-foreground font-medium">{scan.frequency.toFixed(1)} Hz</span>
+                    </div>
+                    <div className="flex items-center gap-1.5" title="Gain (Gn)">
+                      <Zap className="w-3.5 h-3.5 text-yellow-500" />
+                      <span className="text-foreground font-medium">{scan.gain ? `${scan.gain.toFixed(1)} dB` : "N/A"}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5" title="Dynamic Range (DR)">
+                      <Sliders className="w-3.5 h-3.5 text-blue-500" />
+                      <span className="text-foreground font-medium">{scan.dr ? `${scan.dr.toFixed(1)} dB` : "N/A"}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5" title="CHI">
+                      <Activity className="w-3.5 h-3.5 text-blue-400" />
+                      <span className="text-foreground font-medium">{typeof scan.chi === 'number' ? scan.chi.toFixed(1) : scan.chi || "N/A"}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5" title="S/A">
+                      <Layers className="w-3.5 h-3.5 text-green-500" />
+                      <span className="text-foreground font-medium">{scan.sa || "N/A"}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5" title="Map">
+                      <MapIcon className="w-3.5 h-3.5 text-orange-400" />
+                      <span className="text-foreground font-medium">{scan.map || "N/A"}</span>
                     </div>
                   </div>
                 </div>
