@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Play, Square, Save, User, Activity, Waves, Ruler, ArrowLeft, Sliders, Zap, Layers, Map as MapIcon } from "lucide-react"
+import { Play, Square, Save, User, Activity, ArrowLeft, Thermometer, Gauge, Wind } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { saveScan, type Patient } from "@/lib/firebase"
 import { MetricCard } from "./metric-card"
@@ -16,8 +16,8 @@ interface ScanPageContentProps {
 
 interface ScanData {
   time: number
-  distance: number
-  frequency: number
+  temperature: number
+  pressure: number
 }
 
 export function ScanPageContent({ patient }: ScanPageContentProps) {
@@ -26,16 +26,11 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [scanData, setScanData] = useState<ScanData[]>([])
   
-  // Real-time sensor state variables as requested
-  const [distance, setDistance] = useState(0)
-  const [frequency, setFrequency] = useState(0)
-  const [gain, setGain] = useState(0)
-  const [chi, setChi] = useState(0)
-  const [dr, setDr] = useState(0)
-
-  // Static defined values
-  const sa = "3/4"
-  const map = "A/0"
+  // Real-time sensor state variables
+  const [temperature, setTemperature] = useState(0)
+  const [pressure, setPressure] = useState(0)
+  const [heartRate, setHeartRate] = useState(0)
+  const [spo2, setSpo2] = useState(0)
 
   const mqttClientRef = useRef<mqtt.MqttClient | null>(null)
   const startTimeRef = useRef<number>(0)
@@ -45,15 +40,15 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
     setScanData([])
     startTimeRef.current = Date.now()
 
-    // Connect to HiveMQ using wss for secure WebSocket (required on Vercel HTTPS)
+    // Connect to HiveMQ using wss for secure WebSocket
     const client = mqtt.connect("wss://broker.hivemq.com:8884/mqtt", { 
         reconnectPeriod: 1000, // automatic reconnect
     })
     mqttClientRef.current = client
 
     client.on("connect", () => {
-      console.log("[v0] Connected to MQTT broker. Subscribing to marma/distance...")
-      client.subscribe("marma/distance")
+      console.log("[v0] Connected to MQTT broker. Subscribing to marma/data...")
+      client.subscribe("marma/data")
     })
     
     // Auto reconnect handlers
@@ -70,20 +65,25 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
         const data = JSON.parse(message.toString())
         const elapsedTime = Math.floor((Date.now() - startTimeRef.current) / 1000)
 
+        // Ensure we parse safely, defaulting to 0
+        const currentTemp = parseFloat(data.temperature) || 0
+        const currentPressure = parseFloat(data.pressure) || 0
+        const currentHR = parseFloat(data.heartRate) || 0
+        const currentSpo2 = parseFloat(data.spo2) || 0
+
         // Update exact state variables
-        setDistance(data.distance || 0)
-        setFrequency(data.frequency || 0)
-        setGain(data.gain || 0)
-        setChi(data.chi || 0)
-        setDr(data.dr || 0)
+        setTemperature(currentTemp)
+        setPressure(currentPressure)
+        setHeartRate(currentHR)
+        setSpo2(currentSpo2)
 
         setScanData((prev) => {
           const newData = [
             ...prev,
             {
               time: elapsedTime,
-              distance: parseFloat((data.distance || 0).toFixed(2)),
-              frequency: parseFloat((data.frequency || 0).toFixed(2)),
+              temperature: parseFloat(currentTemp.toFixed(2)),
+              pressure: parseFloat(currentPressure.toFixed(2)),
             },
           ]
           // Keep only last 20 data points for the graph
@@ -109,14 +109,10 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
     try {
       await saveScan({
         uid: patient.uid,
-        distance: distance,
-        frequency: frequency,
-        chi: chi.toString(),
-        temperature: 36.5, // Not in hardware display but needed for DB schema
-        gain: gain,
-        dr: dr,
-        sa: sa,
-        map: map,
+        temperature: temperature,
+        pressure: pressure,
+        heartRate: heartRate,
+        spo2: spo2,
       })
       router.push("/records")
     } catch (error) {
@@ -213,60 +209,36 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
           {/* Metrics Grid */}
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             <MetricCard
-              label="CHI"
-              value={chi}
-              unit=""
-              icon={<Activity className="w-5 h-5" />}
-              isLive={isScanning}
-              color="blue"
-            />
-            <MetricCard
-              label="Frq"
-              value={frequency}
-              unit=""
-              icon={<Waves className="w-5 h-5" />}
+              label="Temp"
+              value={temperature}
+              unit="°C"
+              icon={<Thermometer className="w-5 h-5" />}
               isLive={isScanning}
               color="red"
             />
             <MetricCard
-              label="Gn"
-              value={gain}
+              label="Pressure"
+              value={pressure}
               unit=""
-              icon={<Zap className="w-5 h-5" />}
-              isLive={isScanning}
-              color="yellow"
-            />
-            <MetricCard
-              label="S/A"
-              value={sa}
-              unit=""
-              icon={<Layers className="w-5 h-5" />}
-              isLive={false}
-              color="green"
-            />
-            <MetricCard
-              label="Map"
-              value={map}
-              unit=""
-              icon={<MapIcon className="w-5 h-5" />}
-              isLive={false}
-              color="yellow"
-            />
-            <MetricCard
-              label="D"
-              value={distance}
-              unit="cm"
-              icon={<Ruler className="w-5 h-5" />}
-              isLive={isScanning}
-              color="green"
-            />
-            <MetricCard
-              label="DR"
-              value={dr}
-              unit=""
-              icon={<Sliders className="w-5 h-5" />}
+              icon={<Gauge className="w-5 h-5" />}
               isLive={isScanning}
               color="blue"
+            />
+            <MetricCard
+              label="HR (Paused)"
+              value={0}
+              unit="bpm"
+              icon={<Activity className="w-5 h-5" />}
+              isLive={false}
+              color="green"
+            />
+            <MetricCard
+              label="SpO2 (Paused)"
+              value={0}
+              unit="%"
+              icon={<Wind className="w-5 h-5" />}
+              isLive={false}
+              color="yellow"
             />
           </div>
 
@@ -297,19 +269,19 @@ export function ScanPageContent({ patient }: ScanPageContentProps) {
                     <Legend />
                     <Line
                       type="monotone"
-                      dataKey="distance"
-                      stroke="var(--primary)"
-                      strokeWidth={2}
-                      dot={false}
-                      name="Distance (cm)"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="frequency"
+                      dataKey="temperature"
                       stroke="var(--destructive)"
                       strokeWidth={2}
                       dot={false}
-                      name="Frequency (Hz)"
+                      name="Temperature (°C)"
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="pressure"
+                      stroke="var(--primary)"
+                      strokeWidth={2}
+                      dot={false}
+                      name="Pressure"
                     />
                   </LineChart>
                 </ResponsiveContainer>

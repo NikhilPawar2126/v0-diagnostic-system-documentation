@@ -34,10 +34,14 @@ export interface Patient {
 export interface Scan {
   id?: string
   uid: string
-  distance: number
-  frequency: number
-  chi: number | string
-  temperature?: number
+  temperature: number
+  pressure: number
+  heartRate: number
+  spo2: number
+  // Legacy fields kept optional for backwards compatibility
+  distance?: number
+  frequency?: number
+  chi?: number | string
   gain?: number
   dr?: number
   sa?: string
