@@ -1,8 +1,14 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Search, Filter, Loader2, FileText, Users } from "lucide-react"
-import { getPatients, getScansForPatient, type Patient } from "@/lib/firebase"
+import { Search, Filter, Loader2, FileText, Users, Download } from "lucide-react"
+import { getPatients, getScansForPatient, getAllScans, type Patient, type Scan } from "@/lib/firebase"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import dynamic from "next/dynamic"
 
 const PatientRow = dynamic(
@@ -83,6 +89,54 @@ export default function RecordsPage() {
     fetchPatients()
   }
 
+  const handleDownloadData = async (type: "temperature" | "pressure" | "heartRate" | "spo2") => {
+    try {
+      const allPatients = await getPatients()
+      const allScans = await getAllScans()
+      
+      // Create patient map for quick lookup
+      const patientMap = new Map<string, Patient>()
+      allPatients.forEach(p => patientMap.set(p.uid, p))
+
+      // Filter out legacy scans that might not have this new parameter
+      const relevantScans = allScans.filter(scan => scan[type] !== undefined)
+
+      let csvContent = "Username,UserID,Value,Timestamp\n"
+      
+      relevantScans.forEach(scan => {
+        const p = patientMap.get(scan.uid)
+        const username = p ? p.name : "Unknown"
+        const uid = scan.uid
+        const value = scan[type]
+        
+        let timestampStr = "Unknown"
+        if (scan.timestamp) {
+           // Handle both Firestore Timestamp and native Date
+           const dateObj = typeof (scan.timestamp as any).toDate === 'function' 
+             ? (scan.timestamp as any).toDate() 
+             : new Date(scan.timestamp as Date)
+             
+           // Format to YYYY-MM-DD
+           timestampStr = dateObj.toISOString().split('T')[0]
+        }
+
+        csvContent += `"${username}","${uid}",${value},"${timestampStr}"\n`
+      })
+
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+      const link = document.createElement("a")
+      const url = URL.createObjectURL(blob)
+      link.setAttribute("href", url)
+      link.setAttribute("download", `${type}_data.csv`)
+      link.style.visibility = "hidden"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } catch (error) {
+      console.error("[v0] Error generating CSV:", error)
+    }
+  }
+
   return (
     <div className="container max-w-6xl mx-auto px-4 py-6">
       {/* Header */}
@@ -99,8 +153,8 @@ export default function RecordsPage() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        {/* Filters and Download */}
+        <div className="flex flex-col lg:flex-row gap-3">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -137,6 +191,30 @@ export default function RecordsPage() {
             <option value="tested">Tested</option>
             <option value="not-tested">Not Tested</option>
           </select>
+
+          {/* Download Data Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="neu-btn flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-accent hover:text-accent/80 transition-colors w-full lg:w-auto">
+                <Download className="w-4 h-4" />
+                Download Data
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[220px]">
+              <DropdownMenuItem onClick={() => handleDownloadData("temperature")} className="cursor-pointer">
+                Download Temperature Data
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownloadData("pressure")} className="cursor-pointer">
+                Download Pressure Data
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownloadData("heartRate")} className="cursor-pointer">
+                Download Heart Rate Data
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleDownloadData("spo2")} className="cursor-pointer">
+                Download SpO2 Data
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

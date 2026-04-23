@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import { type Patient, type Scan, getScansForPatient, updatePatientStatus, deletePatient, deleteScan } from "@/lib/firebase"
+import { type Patient, type Scan, getScansForPatient, updatePatientStatus, deletePatient, deleteScan, updateScan } from "@/lib/firebase"
 import { StatusIndicator } from "./status-indicator"
 import { Timestamp } from "firebase/firestore"
 
@@ -43,6 +43,18 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
   const [scans, setScans] = useState<Scan[]>([])
   const [loadingScans, setLoadingScans] = useState(false)
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  const [editingRemarkId, setEditingRemarkId] = useState<string | null>(null)
+  const [remarkText, setRemarkText] = useState("")
+
+  const handleSaveRemark = async (scanId: string) => {
+    try {
+      await updateScan(scanId, { remark: remarkText })
+      setScans(scans.map(s => s.id === scanId ? { ...s, remark: remarkText } : s))
+      setEditingRemarkId(null)
+    } catch (error) {
+      console.error("[v0] Error saving remark:", error)
+    }
+  }
 
   const handleExpand = async () => {
     if (!isExpanded && scans.length === 0) {
@@ -291,48 +303,107 @@ export function PatientRow({ patient, isTested, onStatusChange }: PatientRowProp
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="flex flex-col space-y-4">
               {scans.map((scan, index) => (
-                <div key={scan.id} className="neu-card-inset p-4 relative group">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-primary">
-                      Exam #{scans.length - index}
-                    </span>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Calendar className="w-3 h-3" />
-                        {formatTimestamp(scan.timestamp).split(",")[0]}
+                <div key={scan.id} className="neu-card p-4">
+                  {/* Header: Exam info and Patient Details */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-border/50">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-sm font-bold text-primary">
+                          Exam #{scans.length - index}
+                        </span>
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded-full">
+                          <Calendar className="w-3 h-3" />
+                          {formatTimestamp(scan.timestamp)}
+                        </div>
                       </div>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteScan(scan.id!);
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">{patient.name}</span> (ID: {patient.uid})
+                      </div>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          if (editingRemarkId === scan.id) {
+                            setEditingRemarkId(null)
+                          } else {
+                            setEditingRemarkId(scan.id!)
+                            setRemarkText(scan.remark || "")
+                          }
                         }}
-                        className="p-1 rounded-md text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/10"
-                        title="Delete Record"
+                        className="neu-btn px-3 py-1.5 text-xs text-accent"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        {scan.remark ? "Edit Remark" : "Add Remark"}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteScan(scan.id!)
+                        }}
+                        className="neu-btn px-3 py-1.5 text-xs text-destructive hover:bg-destructive/10"
+                      >
+                        Delete
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-y-3 gap-x-2 text-xs mt-3">
-                    <div className="flex items-center gap-1.5" title="Temperature">
-                      <Thermometer className="w-3.5 h-3.5 text-red-500" />
-                      <span className="text-foreground font-medium">{scan.temperature !== undefined ? `${scan.temperature.toFixed(1)} °C` : "N/A"}</span>
+
+                  {/* Metrics Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                    <div className="neu-card-inset p-3 flex items-center gap-2">
+                      <Thermometer className="w-4 h-4 text-red-500 shrink-0" />
+                      <div>
+                        <div className="text-[10px] uppercase text-muted-foreground font-semibold">Temp</div>
+                        <div className="font-medium text-sm">{scan.temperature !== undefined ? `${scan.temperature.toFixed(1)} °C` : "N/A"}</div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5" title="Pressure">
-                      <Gauge className="w-3.5 h-3.5 text-blue-500" />
-                      <span className="text-foreground font-medium">{scan.pressure !== undefined ? `${scan.pressure.toFixed(1)}` : "N/A"}</span>
+                    <div className="neu-card-inset p-3 flex items-center gap-2">
+                      <Gauge className="w-4 h-4 text-blue-500 shrink-0" />
+                      <div>
+                        <div className="text-[10px] uppercase text-muted-foreground font-semibold">Pressure</div>
+                        <div className="font-medium text-sm">{scan.pressure !== undefined ? `${scan.pressure.toFixed(1)}` : "N/A"}</div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5" title="Heart Rate">
-                      <Activity className="w-3.5 h-3.5 text-green-500" />
-                      <span className="text-foreground font-medium">{scan.heartRate !== undefined ? `${scan.heartRate} bpm` : "N/A"}</span>
+                    <div className="neu-card-inset p-3 flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-green-500 shrink-0" />
+                      <div>
+                        <div className="text-[10px] uppercase text-muted-foreground font-semibold">HR</div>
+                        <div className="font-medium text-sm">{scan.heartRate !== undefined ? `${scan.heartRate} bpm` : "N/A"}</div>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5" title="SpO2">
-                      <Wind className="w-3.5 h-3.5 text-yellow-500" />
-                      <span className="text-foreground font-medium">{scan.spo2 !== undefined ? `${scan.spo2} %` : "N/A"}</span>
+                    <div className="neu-card-inset p-3 flex items-center gap-2">
+                      <Wind className="w-4 h-4 text-yellow-500 shrink-0" />
+                      <div>
+                        <div className="text-[10px] uppercase text-muted-foreground font-semibold">SpO2</div>
+                        <div className="font-medium text-sm">{scan.spo2 !== undefined ? `${scan.spo2} %` : "N/A"}</div>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Remark Section */}
+                  {editingRemarkId === scan.id ? (
+                    <div className="flex gap-2">
+                      <textarea
+                        value={remarkText}
+                        onChange={(e) => setRemarkText(e.target.value)}
+                        placeholder="Type your remark here..."
+                        className="neu-input flex-1 p-2 text-sm resize-none min-h-[60px]"
+                      />
+                      <button
+                        onClick={() => handleSaveRemark(scan.id!)}
+                        className="neu-btn px-4 bg-primary/10 text-primary hover:bg-primary/20"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  ) : scan.remark ? (
+                    <div className="neu-card-inset p-3 text-sm border-l-2 border-accent/50 bg-accent/5">
+                      <span className="font-semibold text-accent text-xs block mb-1">Remark:</span>
+                      <p className="text-muted-foreground">{scan.remark}</p>
+                    </div>
+                  ) : null}
                 </div>
               ))}
             </div>

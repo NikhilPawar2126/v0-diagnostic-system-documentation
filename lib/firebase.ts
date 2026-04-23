@@ -38,6 +38,7 @@ export interface Scan {
   pressure: number
   heartRate: number
   spo2: number
+  remark?: string
   // Legacy fields kept optional for backwards compatibility
   distance?: number
   frequency?: number
@@ -132,6 +133,22 @@ export async function deletePatient(patientId: string): Promise<void> {
 export async function deleteScan(scanId: string): Promise<void> {
   const scanRef = doc(db, 'scans', scanId)
   await deleteDoc(scanRef)
+}
+
+export async function updateScan(scanId: string, data: Partial<Scan>): Promise<void> {
+  const scanRef = doc(db, 'scans', scanId)
+  await updateDoc(scanRef, data)
+}
+
+export async function getAllScans(): Promise<Scan[]> {
+  const scansRef = collection(db, 'scans')
+  const q = query(scansRef, orderBy('timestamp', 'desc'))
+  const snapshot = await getDocs(q)
+  
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  } as Scan))
 }
 
 export { db }
